@@ -1,17 +1,18 @@
 #pragma once
 
+#include "Primitive.h"
 #include <glm\common.hpp>
 #include <tuple>
 
 struct Ray;
 
-struct Sphere {
+//! \brief Sphere primitive
+struct Sphere : Primitive {
+
+  //! \brief Compute intersection between ray and sphere
+  bool Intersects(Ray &ray, glm::vec3 *hitPos,
+                  glm::vec3 *hitNormal) const override;
+
   float radius;
   glm::vec3 center;
 };
-
-//! \brief Calculate the hit position and normal between the ray and the sphere.
-//! If the ray does not hit the sphere, false is returned in the first tuple
-//! element
-std::tuple<bool, glm::vec3, glm::vec3> traceSphere(Ray &ray,
-                                                   const Sphere &sphere);

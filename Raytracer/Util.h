@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm\common.hpp>
+#include <glm\mat4x4.hpp>
 #include <string>
 #include <vector>
 
@@ -21,4 +22,9 @@ inline void dumpPPM(const std::vector<uint32_t> &pixels, int width, int height,
 
 inline uint32_t fromRGBA(uint32_t r, uint32_t g, uint32_t b, uint32_t a) {
   return r | (g << 8) | (b << 16) | (a << 24);
+}
+
+inline glm::vec3 Reflect(const glm::vec3 &dir, const glm::vec3 &normal) {
+  auto dDotn = glm::dot(dir, normal);
+  return dir - (2.f * dDotn * normal);
 }

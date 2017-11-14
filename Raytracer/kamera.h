@@ -9,4 +9,5 @@ struct Kamera {
 
   Ray rayforpixel(int x, int y, int width, int height);
   glm::vec3 getForward() const;
+  glm::vec3 getPosition() const;
 };

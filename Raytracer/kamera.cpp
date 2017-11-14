@@ -22,3 +22,5 @@ Ray Kamera::rayforpixel(int x, int y, int width, int height) {
 }
 
 glm::vec3 Kamera::getForward() const { return asVec3(transformation[2]); }
+
+glm::vec3 Kamera::getPosition() const { return asVec3(transformation[3]); }
