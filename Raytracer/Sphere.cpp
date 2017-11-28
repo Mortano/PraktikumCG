@@ -42,3 +42,13 @@ bool Sphere::Intersects(Ray &ray, glm::vec3 *hitPos,
     *hitNormal = glm::normalize((ray.origin + (ray.direction * t0)) - center);
   return true;
 }
+
+Color Sphere::color() const
+{
+	return xcolor;
+}
+
+Material Sphere::material() const
+{
+	return xmaterial;
+}

@@ -8,10 +8,18 @@
 
 struct Scene {
   bool Intersects(Ray &ray, glm::vec3 *hitPos = nullptr,
-                  glm::vec3 *hitNormal = nullptr) const {
+                  glm::vec3 *hitNormal = nullptr,
+					Color* hitColor = nullptr, Material* hitMaterial = nullptr) const {
     bool wasHit = false;
     for (auto &primitive : primitives) {
-      wasHit |= primitive->Intersects(ray, hitPos, hitNormal);
+      auto hits = primitive->Intersects(ray, hitPos, hitNormal);
+	  if (hits)
+	  {
+		  if(hitColor) *hitColor = primitive->color();
+		  if (hitMaterial) *hitMaterial = primitive->material();
+
+	  }
+	  wasHit |= hits;
     }
     return wasHit;
   }
@@ -27,14 +35,20 @@ static Scene BuildScene() {
   auto sphere1 = std::make_unique<Sphere>();
   sphere1->radius = 2.f;
   sphere1->center = {0, 0, 5};
+  sphere1->xcolor = { 1,0,0 };
+  sphere1->xmaterial = Material::DiffuseAndSpecular;
 
   auto sphere2 = std::make_unique<Sphere>();
   sphere2->radius = 10.f;
   sphere2->center = {0.f, 13.f, 5.f};
+  sphere2->xcolor = { 0,1,0 };
+  sphere2->xmaterial = Material::Diffuse;
 
   auto sphere3 = std::make_unique<Sphere>();
   sphere3->radius = 0.25f;
   sphere3->center = {-1.f, 0, 2.5f};
+  sphere3->xcolor = { 0,0,1 };
+  sphere3->xmaterial = Material::Diffuse;
 
   primitives.push_back(std::move(sphere1));
   primitives.push_back(std::move(sphere2));
@@ -59,10 +73,24 @@ static Scene BuildScene() {
   return {cam, std::move(primitives), std::move(lights)};
 }
 
+void funktion(Color& farbe)
+{
+	farbe = { 0,1,0 };
+}
+
+void andereFunktion()
+{
+	Color farbe{ 1, 0, 0 };
+	funktion(farbe);
+	//in java: farbe = 0,1,0
+	//in cpp: farbe = 0,1,0
+}
+
 static pe::RGB_32BitFloat ComputeRadiance(Ray &ray, const Scene &scene,
                                           uint32_t traceDepth) {
   glm::vec3 hitPos, hitNormal;
-  if (!scene.Intersects(ray, &hitPos, &hitNormal))
+  Color hitColor;
+  if (!scene.Intersects(ray, &hitPos, &hitNormal, &hitColor))
     return {};
 
   pe::RGB_32BitFloat totalIntensity;
@@ -90,7 +118,7 @@ static pe::RGB_32BitFloat ComputeRadiance(Ray &ray, const Scene &scene,
     auto rDotv = std::max(0.f, glm::dot(r, view));
     auto spec = (light->Intensity() * std::powf(rDotv, Exponent));
 
-    totalIntensity += (light->Intensity() * nDotl); //+ spec
+    totalIntensity += (light->Intensity() * nDotl) * hitColor + spec; //+ spec
   }
 
   constexpr uint32_t MaxTraceDepth = 2;
@@ -143,7 +171,7 @@ int main(int argc, char **argv) {
   }
 
   // Output as file
-  dumpPPM(pixels, width, height, "D:\\raytraceDump.ppm");
+  dumpPPM(pixels, width, height, "E:\\raytraceDump.ppm");
 
   return 0;
 }
