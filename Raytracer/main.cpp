@@ -90,7 +90,8 @@ static pe::RGB_32BitFloat ComputeRadiance(Ray &ray, const Scene &scene,
                                           uint32_t traceDepth) {
   glm::vec3 hitPos, hitNormal;
   Color hitColor;
-  if (!scene.Intersects(ray, &hitPos, &hitNormal, &hitColor))
+  Material hitMaterial;
+  if (!scene.Intersects(ray, &hitPos, &hitNormal, &hitColor , &hitMaterial))
     return {};
 
   pe::RGB_32BitFloat totalIntensity;
@@ -110,34 +111,47 @@ static pe::RGB_32BitFloat ComputeRadiance(Ray &ray, const Scene &scene,
 
     // 1) Diffuse reflection
     auto nDotl = std::max(0.f, glm::dot(hitNormal, toLight));
+	auto diffuse = (light->Intensity() * nDotl) * hitColor;
 
     // 2) Specular reflection
     auto view = scene.cam.getForward() * -1.f;
     auto r = Reflect(toLight * -1.f, hitNormal);
     const auto Exponent = 20.f;
     auto rDotv = std::max(0.f, glm::dot(r, view));
-    auto spec = (light->Intensity() * std::powf(rDotv, Exponent));
+    auto specular = (light->Intensity() * std::powf(rDotv, Exponent));
 
-    totalIntensity += (light->Intensity() * nDotl) * hitColor + spec; //+ spec
+	if (IsSpecular(hitMaterial))
+	{
+		totalIntensity += specular;
+	}
+	if (IsDiffuse(hitMaterial))
+	{
+		totalIntensity += diffuse;
+	}
+   
   }
 
   constexpr uint32_t MaxTraceDepth = 2;
   // 3) Real reflections
-  if (traceDepth < MaxTraceDepth) {
-    auto view = glm::normalize(hitPos - scene.cam.getPosition());
-    auto reflectionVec = Reflect(view, hitNormal);
+  if (hitMaterial == Material::Specular || hitMaterial==Material::DiffuseAndSpecular)
+  {
+	  if (traceDepth < MaxTraceDepth) {
+		  auto view = glm::normalize(hitPos - scene.cam.getPosition());
+		  auto reflectionVec = Reflect(view, hitNormal);
 
-    auto vDotn = glm::dot(view * -1.f, hitNormal);
+		  auto vDotn = glm::dot(view * -1.f, hitNormal);
 
-    Ray reflectionRay;
-    reflectionRay.direction = reflectionVec;
-    reflectionRay.origin = hitPos + (reflectionVec * 0.001f);
-    reflectionRay.t = std::numeric_limits<float>::max();
+		  Ray reflectionRay;
+		  reflectionRay.direction = reflectionVec;
+		  reflectionRay.origin = hitPos + (reflectionVec * 0.001f);
+		  reflectionRay.t = std::numeric_limits<float>::max();
 
-    auto reflectedRadiance =
-        ComputeRadiance(reflectionRay, scene, traceDepth + 1);
-    totalIntensity += reflectedRadiance * vDotn;
+		  auto reflectedRadiance =
+			  ComputeRadiance(reflectionRay, scene, traceDepth + 1);
+		  totalIntensity += reflectedRadiance * vDotn;
+	  }
   }
+ 
 
   return totalIntensity;
 }
